@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getDatabase } from 'firebase/database';
-import { getAnalytics } from 'firebase/analytics';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlG7GmGiHVG_J0KyjR35PTxYH-mKQ0yo0",
@@ -14,7 +14,19 @@ const firebaseConfig = {
   measurementId: "G-PDQ71P8X06"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Authentication
 export const auth = getAuth(app);
+
+// Realtime Database
 export const database = getDatabase(app);
-export const analytics = getAnalytics(app); 
+
+// Analytics with browser support check
+export const analytics = (() => {
+  if (typeof window !== 'undefined') {
+    return isSupported().then(yes => yes ? getAnalytics(app) : null);
+  }
+  return null;
+})(); 
