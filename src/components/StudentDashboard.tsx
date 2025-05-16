@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { ref, onValue, off, get, DatabaseReference } from 'firebase/database';
+import { ref, get, DatabaseReference, onValue } from 'firebase/database';
 import { database } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import 'leaflet/dist/leaflet.css';
@@ -90,7 +90,7 @@ const StudentDashboard = () => {
   const [mapKey, setMapKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { currentUser, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
