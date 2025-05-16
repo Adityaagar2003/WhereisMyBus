@@ -1,10 +1,16 @@
 #!/bin/bash
 
-# Display Node version
+# Exit on error
+set -e
+
+# Display Node and NPM versions
 echo "Node version:"
 node -v
+echo "NPM version:"
+npm -v
 
-# Install dependencies
+# Clean install dependencies
+echo "Installing dependencies..."
 npm ci
 
 # Create environment variables file
@@ -20,10 +26,26 @@ VITE_FIREBASE_APP_ID=1:17457960794:web:41d665b10d976187014563
 VITE_FIREBASE_MEASUREMENT_ID=G-PDQ71P8X06
 EOF
 
+# Ensure dist directory doesn't exist
+rm -rf dist
+
 # Build project
+echo "Building project..."
 npm run build
 
-# Ensure _redirects file exists
-cp -f public/_redirects dist/ || echo "/* /index.html 200" > dist/_redirects
+# Verify dist directory was created
+if [ ! -d "dist" ]; then
+  echo "Error: dist directory was not created during build"
+  exit 1
+fi
 
-echo "Build completed successfully!" 
+# Create _redirects file for SPA routing
+echo "Creating _redirects file..."
+echo "/* /index.html 200" > dist/_redirects
+
+# Copy static assets
+echo "Copying static assets..."
+cp -r public/* dist/ 2>/dev/null || :
+
+echo "Build completed successfully!"
+ls -la dist/ 

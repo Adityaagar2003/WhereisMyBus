@@ -1,5 +1,5 @@
 [build]
-  command = "bash ./netlify.sh"
+  command = "chmod +x netlify.sh && ./netlify.sh"
   publish = "dist"
 
 # Handle React Router
@@ -10,4 +10,20 @@
 
 # Environment variable handling
 [build.environment]
-  NODE_VERSION = "18" 
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+# Build settings
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.images]
+  compress = true 
