@@ -4,65 +4,35 @@ import {
   Box,
   Button,
   Container,
-  FormControl,
-  FormLabel,
-  Input,
   VStack,
   Text,
   useToast,
-  Divider
+  Image,
+  Divider,
 } from '@chakra-ui/react';
-import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '../contexts/AuthContext';
+import { FcGoogle } from 'react-icons/fc';
+import '../styles/login.css';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
-  const { googleSignIn, emailSignIn, logout } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await googleSignIn();
+      await login();
       navigate('/student');
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: 'Error signing in',
-        description: 'Please try again later',
+        description: 'Failed to sign in with Google. Please try again.',
         status: 'error',
         duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setIsLoading(true);
-      await emailSignIn(email, password);
-      // Check if the user is actually the driver
-      if (email !== 'driver@college.edu') {
-        await logout(); // Log them out if they're not the driver
-        toast({
-          title: 'Access Denied',
-          description: 'This login is reserved for drivers only',
-          status: 'error',
-          duration: 3000,
-        });
-        return;
-      }
-      navigate('/driver');
-    } catch (error: any) {
-      toast({
-        title: 'Error signing in',
-        description: error.message || 'Please check your credentials',
-        status: 'error',
-        duration: 3000,
+        isClosable: true,
       });
     } finally {
       setIsLoading(false);
@@ -70,58 +40,66 @@ const Login = () => {
   };
 
   return (
-    <Container maxW="container.sm" py={10}>
-      <VStack spacing={8}>
-        <Text fontSize="2xl" fontWeight="bold">
-          College Bus Tracker
-        </Text>
+    <Box className="login-container">
+      <Container maxW="container.sm" py={10}>
+        <VStack spacing={8}>
+          <Image 
+            src="/bus-icon.svg" 
+            alt="Bus Icon" 
+            boxSize="100px" 
+            className="bus-icon"
+          />
+          
+          <Text 
+            fontSize="3xl" 
+            fontWeight="bold" 
+            textAlign="center"
+            color="gray.800"
+          >
+            College Bus Tracker
+          </Text>
 
-        {/* Student Login */}
-        <Button
-          w="full"
-          leftIcon={<FcGoogle />}
-          onClick={handleGoogleSignIn}
-          isLoading={isLoading}
-        >
-          Sign in with Google (Students)
-        </Button>
+          <Box 
+            w="full" 
+            maxW="md" 
+            p={8} 
+            borderRadius="lg" 
+            boxShadow="xl" 
+            className="login-box"
+          >
+            <VStack spacing={6}>
+              <Text fontSize="xl" fontWeight="medium" color="gray.700">
+                Welcome Back!
+              </Text>
 
-        <Divider />
+              <Button
+                w="full"
+                size="lg"
+                variant="outline"
+                leftIcon={<FcGoogle />}
+                onClick={handleGoogleSignIn}
+                isLoading={isLoading}
+                loadingText="Signing in..."
+                className="google-button"
+                _hover={{
+                  bg: 'gray.50',
+                  transform: 'translateY(-2px)',
+                  boxShadow: 'md',
+                }}
+                transition="all 0.2s"
+              >
+                Continue with Google
+              </Button>
 
-        {/* Driver Login */}
-        <Box as="form" w="full" onSubmit={handleEmailSignIn}>
-          <VStack spacing={4}>
-            <Text>Driver Login</Text>
-            <FormControl>
-              <FormLabel>Email</FormLabel>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="driver@college.edu"
-              />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Password</FormLabel>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </FormControl>
-            <Button
-              type="submit"
-              colorScheme="blue"
-              w="full"
-              isLoading={isLoading}
-            >
-              Sign In as Driver
-            </Button>
-          </VStack>
-        </Box>
-      </VStack>
-    </Container>
+              <Divider />
+
+              <Text fontSize="sm" color="gray.500" textAlign="center">
+                By continuing, you agree to our Terms of Service and Privacy Policy
+              </Text>
+            </VStack>
+          </Box>
+        </VStack>
+      </Container>
+    </Box>
   );
-};
-
-export default Login; 
+} 
