@@ -43,6 +43,7 @@
 .leaflet-popup-content {
   margin: 8px 12px;
   line-height: 1.4;
+  min-width: 150px;
 }
 
 .leaflet-popup-content p {
@@ -52,4 +53,33 @@
 /* Ensure the map tiles load properly */
 .leaflet-tile {
   visibility: inherit !important;
+}
+
+.bus-icon {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+  transition: all 0.3s ease;
+}
+
+.bus-icon:hover {
+  transform: scale(1.1);
+}
+
+.leaflet-marker-icon.bus-icon {
+  background: transparent;
+  border: none;
+}
+
+.bus-popup .leaflet-popup-content {
+  padding: 5px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.bus-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+}
+
+.bus-popup .leaflet-popup-tip {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
 } 

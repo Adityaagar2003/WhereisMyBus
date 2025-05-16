@@ -31,12 +31,15 @@ const defaultCenter: [number, number] = [25.5941, 85.1376];
 
 // Create custom bus icon
 const busIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  shadowSize: [41, 41]
+  iconUrl: '/bus-icon.svg',
+  iconRetinaUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', // Fallback to a yellow bus PNG
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36],
+  shadowUrl: undefined,
+  shadowSize: undefined,
+  shadowAnchor: undefined,
+  className: 'bus-icon'
 });
 
 // This component updates the map view when the bus location changes
@@ -68,17 +71,22 @@ function DynamicMarker({ location }: { location: LocationData }) {
 
   return (
     <Marker position={position} icon={busIcon}>
-      <Popup>
-        <div>
-          <p><strong>Driver:</strong> {location.driverName}</p>
-          <p><strong>Contact:</strong> {location.phoneNumber}</p>
-          <p>
-            <strong>Last Updated:</strong>{' '}
-            {new Date(location.timestamp).toLocaleTimeString()}
-          </p>
-          <p>
-            <strong>Coordinates:</strong> {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-          </p>
+      <Popup className="bus-popup">
+        <div style={{ padding: '5px', textAlign: 'center' }}>
+          <h3 style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '5px' }}>
+            College Bus
+          </h3>
+          <div style={{ margin: '8px 0' }}>
+            <div><strong>Driver:</strong> {location.driverName}</div>
+            <div><strong>Phone:</strong> {location.phoneNumber}</div>
+            <div style={{ fontSize: '12px', marginTop: '8px', color: '#666' }}>
+              <strong>Last Updated:</strong>{' '}
+              {new Date(location.timestamp).toLocaleTimeString()}
+            </div>
+            <div style={{ fontSize: '10px', color: '#888', marginTop: '5px' }}>
+              {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+            </div>
+          </div>
         </div>
       </Popup>
     </Marker>
