@@ -82,6 +82,18 @@ function MapUpdater({ location, onAddressUpdate }: { location: LocationData | nu
         }
       });
       
+      // Add custom map style to hide POIs
+      const style = document.createElement('style');
+      style.textContent = `
+        .leaflet-pane img[src*="hospital"],
+        .leaflet-pane img[src*="medical"],
+        .leaflet-pane img[src*="clinic"],
+        .leaflet-pane img[src*="pharmacy"] {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
       // Force a map invalidate to ensure re-rendering
       setTimeout(() => {
         map.invalidateSize();
@@ -268,6 +280,7 @@ const StudentDashboard = () => {
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                className="map-tiles"
               />
               
               {/* Always render MapUpdater */}

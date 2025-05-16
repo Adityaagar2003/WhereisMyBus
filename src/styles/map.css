@@ -11,9 +11,57 @@
   z-index: 1;
 }
 
+/* Hide all POI icons except bus */
+.leaflet-marker-pane img:not(.bus-icon) {
+  display: none !important;
+}
+
+/* Custom map style */
+.map-tiles {
+  filter: saturate(0.8) brightness(1.1);
+}
+
+/* Ensure bus icon is always visible */
+.bus-icon {
+  z-index: 1000 !important;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  line-height: 1.4;
+}
+
 .leaflet-control-container .leaflet-top,
 .leaflet-control-container .leaflet-bottom {
   z-index: 1000;
+}
+
+/* Hide unwanted map features */
+.leaflet-control-attribution {
+  font-size: 10px;
+  background-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Custom popup style */
+.bus-popup .leaflet-popup-content {
+  padding: 10px;
+  min-width: 200px;
+}
+
+.bus-popup .leaflet-popup-content h3 {
+  color: #2D3748;
+  margin-bottom: 8px;
+}
+
+.bus-popup .leaflet-popup-content div {
+  margin: 4px 0;
+  color: #4A5568;
 }
 
 .leaflet-pane {
@@ -40,12 +88,6 @@
   z-index: 700;
 }
 
-.leaflet-popup-content {
-  margin: 8px 12px;
-  line-height: 1.4;
-  min-width: 150px;
-}
-
 .leaflet-popup-content p {
   margin: 4px 0;
 }
@@ -53,11 +95,6 @@
 /* Ensure the map tiles load properly */
 .leaflet-tile {
   visibility: inherit !important;
-}
-
-.bus-icon {
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
-  transition: all 0.3s ease;
 }
 
 .bus-icon:hover {
