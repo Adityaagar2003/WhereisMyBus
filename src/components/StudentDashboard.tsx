@@ -27,6 +27,15 @@ interface LocationData {
   uid?: string;
 }
 
+interface AddressData {
+  display_name: string;
+  road?: string;
+  suburb?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
 const defaultCenter: [number, number] = [25.5941, 85.1376];
 
 // Create custom bus icon
@@ -42,8 +51,22 @@ const busIcon = new L.Icon({
   className: 'bus-icon'
 });
 
+// Function to fetch address from coordinates
+const fetchAddress = async (lat: number, lng: number): Promise<AddressData | null> => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+    );
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching address:', error);
+    return null;
+  }
+};
+
 // This component updates the map view when the bus location changes
-function MapUpdater({ location }: { location: LocationData | null }) {
+function MapUpdater({ location, onAddressUpdate }: { location: LocationData | null, onAddressUpdate: (address: string) => void }) {
   const map = useMap();
   
   useEffect(() => {
@@ -51,12 +74,20 @@ function MapUpdater({ location }: { location: LocationData | null }) {
       console.log('MapUpdater: Updating map view to:', location);
       map.setView([location.lat, location.lng], 15);
       
+      // Fetch address when location changes
+      fetchAddress(location.lat, location.lng).then((addressData) => {
+        if (addressData) {
+          const address = addressData.display_name;
+          onAddressUpdate(address);
+        }
+      });
+      
       // Force a map invalidate to ensure re-rendering
       setTimeout(() => {
         map.invalidateSize();
       }, 250);
     }
-  }, [location, map]);
+  }, [location, map, onAddressUpdate]);
 
   return null;
 }
@@ -95,12 +126,17 @@ function DynamicMarker({ location }: { location: LocationData }) {
 
 const StudentDashboard = () => {
   const [busLocation, setBusLocation] = useState<LocationData | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>('');
   const [mapKey, setMapKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+
+  const handleAddressUpdate = (address: string) => {
+    setCurrentAddress(address);
+  };
 
   useEffect(() => {
     console.log('Setting up location listeners...');
@@ -116,6 +152,12 @@ const StudentDashboard = () => {
         if (data) {
           console.log('Initial location data:', data);
           setBusLocation(data);
+          // Fetch initial address
+          fetchAddress(data.lat, data.lng).then((addressData) => {
+            if (addressData) {
+              setCurrentAddress(addressData.display_name);
+            }
+          });
         } else {
           console.log('No initial location data available');
         }
@@ -229,7 +271,7 @@ const StudentDashboard = () => {
               />
               
               {/* Always render MapUpdater */}
-              <MapUpdater location={busLocation} />
+              <MapUpdater location={busLocation} onAddressUpdate={handleAddressUpdate} />
               
               {/* Render the dynamic marker only if we have location data */}
               {busLocation && <DynamicMarker location={busLocation} />}
@@ -252,6 +294,11 @@ const StudentDashboard = () => {
             <Text>
               <strong>Location:</strong> {busLocation.lat.toFixed(6)}, {busLocation.lng.toFixed(6)}
             </Text>
+            {currentAddress && (
+              <Text mt={2}>
+                <strong>Address:</strong> {currentAddress}
+              </Text>
+            )}
           </Box>
         ) : (
           <Box w="100%" p={4} borderRadius="md" bg="gray.100">
