@@ -10,7 +10,6 @@ import {
   Spinner,
   Alert,
   AlertIcon,
-  Badge,
 } from '@chakra-ui/react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -28,9 +27,7 @@ interface LocationData {
   uid?: string;
 }
 
-// BIT Patna main gate coordinates
-const BIT_PATNA_LOCATION: [number, number] = [25.5941, 85.1376];
-const DRIVER_ACTIVE_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
+const defaultCenter: [number, number] = [25.5941, 85.1376];
 
 // Create custom bus icon
 const busIcon = new L.Icon({
@@ -45,32 +42,7 @@ const busIcon = new L.Icon({
   className: 'bus-icon'
 });
 
-// Function to check if driver is active based on timestamp
-const checkDriverActive = (timestamp: number): boolean => {
-  const now = Date.now();
-  return now - timestamp < DRIVER_ACTIVE_THRESHOLD;
-};
-
-// Function to get address from coordinates using OpenStreetMap Nominatim
-const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-    );
-    const data = await response.json();
-    if (data && data.display_name) {
-      // Simplify the address
-      const parts = data.display_name.split(',');
-      return parts.slice(0, 3).join(', ');
-    }
-    return 'Unknown location';
-  } catch (error) {
-    console.error('Error fetching address:', error);
-    return 'Error fetching address';
-  }
-};
-
-// Component to update map center when bus location changes
+// This component updates the map view when the bus location changes
 function MapUpdater({ location }: { location: LocationData | null }) {
   const map = useMap();
   
@@ -90,22 +62,12 @@ function MapUpdater({ location }: { location: LocationData | null }) {
 }
 
 // Dynamic marker that updates with location changes
-function DynamicMarker({ location, isActive }: { location: LocationData, isActive: boolean }) {
+function DynamicMarker({ location }: { location: LocationData }) {
   const position: [number, number] = useMemo(() => {
     return [location.lat, location.lng];
   }, [location.lat, location.lng]);
 
-  const [address, setAddress] = useState<string>('Loading address...');
-
-  useEffect(() => {
-    // Get address for the location
-    getAddressFromCoordinates(location.lat, location.lng)
-      .then(addr => setAddress(addr))
-      .catch(err => {
-        console.error('Error getting address:', err);
-        setAddress('Unknown location');
-      });
-  }, [location.lat, location.lng]);
+  console.log('Rendering marker at position:', position);
 
   return (
     <Marker position={position} icon={busIcon}>
@@ -121,15 +83,6 @@ function DynamicMarker({ location, isActive }: { location: LocationData, isActiv
               <strong>Last Updated:</strong>{' '}
               {new Date(location.timestamp).toLocaleTimeString()}
             </div>
-            <div style={{ fontSize: '12px', marginTop: '5px', color: '#444' }}>
-              <strong>Status:</strong>{' '}
-              {isActive ? 
-                <span style={{ color: 'green' }}>Active</span> : 
-                <span style={{ color: 'red' }}>Inactive</span>}
-            </div>
-            <div style={{ fontSize: '12px', marginTop: '5px', color: '#444' }}>
-              <strong>Location:</strong> {address}
-            </div>
             <div style={{ fontSize: '10px', color: '#888', marginTop: '5px' }}>
               {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
             </div>
@@ -142,11 +95,9 @@ function DynamicMarker({ location, isActive }: { location: LocationData, isActiv
 
 const StudentDashboard = () => {
   const [busLocation, setBusLocation] = useState<LocationData | null>(null);
-  const [isDriverActive, setIsDriverActive] = useState<boolean>(false);
   const [mapKey, setMapKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [locationAddress, setLocationAddress] = useState<string>('');
   const { logout } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -164,38 +115,9 @@ const StudentDashboard = () => {
         const data = snapshot.val();
         if (data) {
           console.log('Initial location data:', data);
-          
-          // Check if driver is active based on timestamp
-          const active = checkDriverActive(data.timestamp);
-          setIsDriverActive(active);
-          
-          if (active) {
-            setBusLocation(data);
-            // Get address
-            getAddressFromCoordinates(data.lat, data.lng)
-              .then(address => setLocationAddress(address));
-          } else {
-            // If driver is not active, use BIT Patna location
-            const inactiveData = {
-              ...data,
-              lat: BIT_PATNA_LOCATION[0],
-              lng: BIT_PATNA_LOCATION[1]
-            };
-            setBusLocation(inactiveData);
-            setLocationAddress('BIT Patna Main Gate');
-          }
+          setBusLocation(data);
         } else {
           console.log('No initial location data available');
-          // Set default location to BIT Patna
-          const defaultData = {
-            lat: BIT_PATNA_LOCATION[0],
-            lng: BIT_PATNA_LOCATION[1],
-            driverName: 'No Driver',
-            phoneNumber: 'N/A',
-            timestamp: Date.now()
-          };
-          setBusLocation(defaultData);
-          setLocationAddress('BIT Patna Main Gate');
         }
         setIsLoading(false);
       })
@@ -212,40 +134,19 @@ const StudentDashboard = () => {
         const data = snapshot.val();
         if (data) {
           console.log('Real-time location update received:', data);
+          setBusLocation(data);
           
-          // Check if driver is active based on timestamp
-          const active = checkDriverActive(data.timestamp);
-          setIsDriverActive(active);
+          // Increment map key to force re-render
+          setMapKey(prev => prev + 1);
           
-          if (active) {
-            setBusLocation(data);
-            // Get address
-            getAddressFromCoordinates(data.lat, data.lng)
-              .then(address => setLocationAddress(address));
-              
-            // Increment map key to force re-render
-            setMapKey(prev => prev + 1);
-            
-            // Show toast when location updates
-            toast({
-              title: 'Location Updated',
-              description: `Driver ${data.driverName} location updated`,
-              status: 'info',
-              duration: 2000,
-              isClosable: true,
-            });
-          } else if (busLocation?.lat !== BIT_PATNA_LOCATION[0] || 
-                   busLocation?.lng !== BIT_PATNA_LOCATION[1]) {
-            // Only update to default location if not already there
-            const inactiveData = {
-              ...data,
-              lat: BIT_PATNA_LOCATION[0],
-              lng: BIT_PATNA_LOCATION[1]
-            };
-            setBusLocation(inactiveData);
-            setLocationAddress('BIT Patna Main Gate');
-            setMapKey(prev => prev + 1);
-          }
+          // Show toast when location updates
+          toast({
+            title: 'Location Updated',
+            description: `Driver ${data.driverName} location updated`,
+            status: 'info',
+            duration: 2000,
+            isClosable: true,
+          });
         }
       },
       (error) => {
@@ -263,7 +164,7 @@ const StudentDashboard = () => {
       console.log('Cleaning up location listener');
       unsubscribe();
     };
-  }, [toast, busLocation]);
+  }, [toast]);
 
   const handleLogout = async () => {
     try {
@@ -285,7 +186,7 @@ const StudentDashboard = () => {
     if (busLocation) {
       return [busLocation.lat, busLocation.lng];
     }
-    return BIT_PATNA_LOCATION;
+    return defaultCenter;
   }, [busLocation]);
 
   return (
@@ -300,17 +201,6 @@ const StudentDashboard = () => {
             <AlertIcon />
             {error}
           </Alert>
-        )}
-        
-        {!isLoading && (
-          <Box w="100%" p={3} bg="gray.50" borderRadius="md" textAlign="center">
-            <Text fontSize="sm" fontWeight="medium">
-              <Badge colorScheme={isDriverActive ? "green" : "red"} mr={2}>
-                {isDriverActive ? "Active" : "Inactive"}
-              </Badge>
-              {isDriverActive ? `Current Location: ${locationAddress}` : "No active driver. Bus is at BIT Patna Main Gate"}
-            </Text>
-          </Box>
         )}
 
         <Box 
@@ -335,41 +225,33 @@ const StudentDashboard = () => {
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               
               {/* Always render MapUpdater */}
               <MapUpdater location={busLocation} />
               
               {/* Render the dynamic marker only if we have location data */}
-              {busLocation && <DynamicMarker location={busLocation} isActive={isDriverActive} />}
+              {busLocation && <DynamicMarker location={busLocation} />}
             </MapContainer>
           )}
         </Box>
 
         {busLocation ? (
           <Box w="100%" p={4} borderRadius="md" bg="gray.50">
-            {isDriverActive ? (
-              <>
-                <Text>
-                  <strong>Driver:</strong> {busLocation.driverName}
-                </Text>
-                <Text>
-                  <strong>Contact:</strong> {busLocation.phoneNumber}
-                </Text>
-                <Text>
-                  <strong>Last Updated:</strong>{' '}
-                  {new Date(busLocation.timestamp).toLocaleTimeString()}
-                </Text>
-                <Text>
-                  <strong>Address:</strong> {locationAddress}
-                </Text>
-              </>
-            ) : (
-              <Text textAlign="center" fontWeight="medium" color="red.500">
-                No active driver at this time. Bus is parked at BIT Patna Main Gate.
-              </Text>
-            )}
+            <Text>
+              <strong>Driver:</strong> {busLocation.driverName}
+            </Text>
+            <Text>
+              <strong>Contact:</strong> {busLocation.phoneNumber}
+            </Text>
+            <Text>
+              <strong>Last Updated:</strong>{' '}
+              {new Date(busLocation.timestamp).toLocaleTimeString()}
+            </Text>
+            <Text>
+              <strong>Location:</strong> {busLocation.lat.toFixed(6)}, {busLocation.lng.toFixed(6)}
+            </Text>
           </Box>
         ) : (
           <Box w="100%" p={4} borderRadius="md" bg="gray.100">
